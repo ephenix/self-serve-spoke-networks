@@ -1,0 +1,156 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+      "BucketName": {
+          "Type": "String",
+          "Description": "S3 Bucket Name for solution elements"
+      },
+      "KeyPrefix": {
+          "Type": "String",
+          "Description": "Key Prefix for solution elements. Defaults to \\'sssn/\\'"
+      },
+      "StackSetExecutionRole": {
+          "Type": "String",
+          "Description": "Stack Set Execution role that exists in all sub-accounts"
+      }
+  },
+  "Resources": {
+      "TrackingTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+              "TableName": {
+                  "Fn::Sub": "${EnvironmentName}-cidr-tracking-table"
+              },
+              "AttributeDefinitions": [
+                  {
+                      "AttributeName": "network_id",
+                      "AttributeType": "S"
+                  },
+                  {
+                      "AttributeName": "cidr",
+                      "AttributeType": "S"
+                  }
+              ],
+              "KeySchema": [
+                  {
+                      "AttributeName": "network_id",
+                      "KeyType": "HASH"
+                  },
+                  {
+                      "AttributeName": "cidr",
+                      "KeyType": "RANGE"
+                  }
+              ],
+              "ProvisionedThroughput": {
+                  "ReadCapacityUnits": 1,
+                  "WriteCapacityUnits": 1
+              }
+          }
+      },
+      "PortfolioDeploymentRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+              "Path": "/",
+              "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                      {
+                          "Effect": "Allow",
+                          "Principal": {
+                              "Service": [
+                                  "lambda.amazonaws.com"
+                              ]
+                          },
+                          "Action": [
+                              "sts:AssumeRole"
+                          ]
+                      }
+                  ]
+              },
+              "Policies": [
+                  {
+                      "PolicyName": "root",
+                      "PolicyDocument": {
+                          "Version": "2012-10-17",
+                          "Statement": [
+                              {
+                                  "Effect": "Allow",
+                                  "Action": "*",
+                                  "Resource": "*"
+                              }
+                          ]
+                      }
+                  }
+              ]
+          }
+      },
+      "PortfolioDeploymentFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+              "Handler": "portfolio_deployment.handler",
+              "Role": {
+                  "Fn::GetAtt": [
+                      "PortfolioDeploymentRole",
+                      "Arn"
+                  ]
+              },
+              "Runtime": "python3.8",
+              "Environment": {
+                  "Variables": {
+                      "ConfigBucket": {
+                          "Ref": "BucketName"
+                      },
+                      "ConfigKey": {
+                          "Fn::Sub": "${KeyPrefix}/config.json"
+                      },
+                      "TrackingTable": {
+                          "Ref": "TrackingTable"
+                      }
+                  }
+              },
+              "Code": {
+                  "S3Bucket": {
+                      "Ref": "BucketName"
+                  },
+                  "S3Key": {
+                      "Fn::Sub": "${KeyPrefix}/scripts/portfolio_deployment.zip"
+                  }
+              }
+          }
+      },
+      "DynamicCidrFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+              "Handler": "dynamic_cidr.handler",
+              "Role": {
+                  "Fn::GetAtt": [
+                      "PortfolioDeploymentRole",
+                      "Arn"
+                  ]
+              },
+              "Runtime": "python3.8",
+              "Environment": {
+                  "Variables": {
+                      "ConfigBucket": {
+                          "Ref": "BucketName"
+                      },
+                      "ConfigKey": {
+                          "Fn::Sub": "${KeyPrefix}/config.json"
+                      },
+                      "TrackingTable": {
+                          "Ref": "TrackingTable"
+                      }
+                  }
+              },
+              "Code": {
+                  "S3Bucket": {
+                      "Ref": "BucketName"
+                  },
+                  "S3Key": {
+                      "Fn::Sub": "${KeyPrefix}/scripts/portfolio_deployment.zip"
+                  }
+              }
+          }
+      }
+  }
+}

@@ -1,0 +1,65 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "BucketName": {
+            "Type": "String",
+            "Default": "sssn-5007",
+            "Description": "S3 Bucket Name to deploy solution elements.  ie s3://BucketName/KeyPrefix/templates/vpc.json"
+        },
+        "KeyPrefix": {
+            "Type": "String",
+            "Default": "sssn",
+            "Description": "Key Prefix to deploy solution elements in S3. ie s3://BucketName/KeyPrefix/templates/vpc.json"
+        },
+        "StackSetExecutionRole": {
+            "Type": "String",
+            "Description": "Name of the IAM role to deploy stack sets to spoke accounts",
+            "Default": "AWSControlTowerExecution"
+        },
+        "Environment": {
+            "Type": "String",
+            "Description": "Creates an Environment tag on all resources with this Value",
+            "Default": "dev"
+        }
+    },
+    "Resources": {
+        "Backend": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {
+                    "Fn::Sub": "https://${BucketName}.s3.amazonaws.com/${KeyPrefix}/templates/backend.json"
+                },
+                "Parameters": {
+                    "BucketName": {
+                        "Ref": "BucketName"
+                    },
+                    "KeyPrefix": {
+                        "Ref": "KeyPrefix"
+                    },
+                    "StackSetExecutionRole": {
+                        "Ref": "StackSetExecutionRole"
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "ParentStack",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": {
+                            "Ref": "Environment"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "MyOutput": {
+            "Value": "Hello, World"
+        }
+    }
+}

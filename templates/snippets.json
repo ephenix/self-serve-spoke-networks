@@ -1,0 +1,63 @@
+{
+  "Product": {
+    "Type": "AWS::ServiceCatalog::CloudFormationProduct",
+    "Properties": {
+      "Description": "Deploys VPCs",
+      "Distributor": "Networking",
+      "Name": null,
+      "Owner": "Networking",
+      "ProvisioningArtifactParameters": [
+        {
+          "Info": {
+            "LoadTemplateFromURL": null
+          }
+        }
+      ]
+    }
+  },
+  "ProductAssociation": {
+    "Type": "AWS::ServiceCatalog::PortfolioProductAssociation",
+    "Properties": {
+      "PortfolioId": {
+        "Ref": null
+      },
+      "ProductId": {
+        "Ref": null
+      }
+    }
+  },
+  "Portfolio": {
+    "Type": "AWS::ServiceCatalog::Portfolio",
+    "Properties": {
+      "DisplayName": "",
+      "ProviderName": "Networking"
+    }
+  },
+  "PortfolioShare": {
+    "Type": "AWS::ServiceCatalog::PortfolioShare",
+    "Properties": {
+      "AccountId": {
+        "Ref": "AccountID"
+      },
+      "PortfolioId": {
+        "Ref": "AccountPortfolio"
+      }
+    }
+  },
+  "StackSetConstraint": {
+    "Type": "AWS::ServiceCatalog::StackSetConstraint",
+    "DependsOn": null,
+    "Properties": {
+      "Description": "Deploys the stack in the target account.",
+      "StackInstanceControl": "ALLOWED",
+      "PortfolioId": {
+        "Ref": null
+      },
+      "ProductId": null,
+      "RegionList": [],
+      "AdminRole": null,
+      "AccountList": [],
+      "ExecutionRole": null
+    }
+  }
+}

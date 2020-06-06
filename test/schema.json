@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "network": {
+      "type": "object",
+      "required": ["id","tgwid","master_cidr","min_vpc_netmask","max_vpc_netmask","cidr_selection","allow_public","deployment"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tgwid": {
+          "type": "string",
+          "pattern": "tgw-.*"
+        },
+        "master_cidr": {
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))?$"
+        },
+        "min_vpc_netmask": {
+          "type": "integer",
+          "minimum": 6,
+          "maximum": 28
+        },
+        "max_vpc_netmask": {
+          "type": "integer",
+          "minimum": 6,
+          "maximum": 28
+        },
+        "cidr_selection": {
+          "type": "string",
+          "pattern": "firstAvailable|append"
+        },
+        "allow_public": {
+          "type": "boolean"
+        },
+        "vpc_template_path": {
+          "type": "string"
+        },
+        "deployment": {
+          "type": "object",
+          "properties": {
+            "delete_missing": {
+              "type": "boolean"
+            },
+            "organization": {
+              "type": "boolean"
+            },
+            "ou_list": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "ou-.*"
+              }
+            },
+            "account_list": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "\\d*"
+              }
+            },
+            "available_regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "networks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/network"
+      }
+    },
+    "system": {
+      "type": "object",
+      "properties": {
+        "config_scan_interval": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

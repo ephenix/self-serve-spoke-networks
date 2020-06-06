@@ -1,0 +1,54 @@
+  trackingtable = os.environ['TrackingTable']
+  config = read_json_object( os.environ['Bucket'], f"{os.environ['KeyPrefix']}/config.json" )
+
+  for network in config['networks']:
+    deployment = network['deployment']
+    target_accounts = enumerate_deployment_targets( deployment )
+    for account in target_accounts:
+      deployed_portfolios = get_deployed_portfolios()
+      if account not in deployed_portfolios:
+        cfnclient.create_stack(
+          StackName   = f"sssn-portfolio-{account}",
+          TemplateURL = f"https://{os.environ['Bucket']}.s3.amazonaws.com/{os.environ['KeyPrefix']}/templates/portfolio.json",
+          Parameters  = [
+            {
+              'ParameterKey': 'AccountID',
+              'ParameterValue': account
+            }
+          ]
+        )
+        deployed_portfolios.append(account)
+      
+      deployed_products = get_deployed_products()
+      if account not in deployed_products:
+        cfnclient.create_stack(
+          StackName   = f"sssn-vpc-{network['id']}-{account}",
+          TemplateURL = f"https://{os.environ['Bucket']}.s3.amazonaws.com/{os.environ['KeyPrefix']}/templates/network_product.json",
+          Parameters  = [
+            {
+              'ParameterKey': 'AccountID',
+              'ParameterValue': account
+            }
+          ]
+        )
+        deployed_portfolios.append(account)
+
+def get_deployed_portfolios ():
+  portfolios = []
+  stacks = cfnclient.list_stacks()
+  for stack in stacks['StackSummaries']:
+    if stack['StackStatus'] not in ['DELETE_COMPLETE']:
+      if re.match( 'sssn-portfolio-.*', stack['StackName'] ):
+        accountid = stack['StackName'][15:]
+        portfolios.append(accountid)
+  return portfolios
+
+def get_deployed_products ():
+  products = []
+  stacks = cfnclient.list_stacks()
+  for stack in stacks['StackSummaries']:
+    if stack['StackStatus'] not in ['DELETE_COMPLETE']:
+      if re.match( 'sssn-product-.*', stack['StackName'] ):
+        accountid = stack['StackName'][13:]
+        products.append(accountid)
+  return products
